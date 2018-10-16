@@ -12,3 +12,13 @@ parser.add_argument('--max', help='the maximum clients', metavar='n_clients', de
 
 args = parser.parse_args()
 
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as lsock:
+    lsock.bind((args.host, args.port))
+    if args.n_clients:
+        lsock.listen(args.n_clients)
+    else:
+        lsock.listen()
+
+    while True:
+        sock, addr = lsock.accept()
