@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
-import argparse, socket
+import argparse, pickle, socket
+
+from models import ClientFile
 
 ## parse command line input
 
@@ -14,3 +16,9 @@ parser.add_argument('--append', help='appends to the end of the file if file exi
 
 args = parser.parse_args()
 
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
+    soc.connect((args.host, args.port))
+    with open(args.file_path, 'rt') as f:
+        ## pickle aka serialize
+        file_pickle = pickle.dump(ClientFile(args.file_name, f.read(), args.append))
+        soc.sendall(file_pickle)
