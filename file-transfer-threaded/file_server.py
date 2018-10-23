@@ -5,10 +5,8 @@ from threading import Thread, Lock
 
 from framedSock import FramedStreamSock
 
-FILE_STORAGE_DIR = 'storage'
 
 ## parse command line input
-
 parser = argparse.ArgumentParser('Run a file transfer server.')
 
 parser.add_argument('--host', help='default 127.0.0.1', metavar='host', default='127.0.0.1', type=str)
@@ -17,6 +15,12 @@ parser.add_argument('--max', help='the maximum clients', metavar='n_clients', de
 parser.add_argument('--debug', metavar='debug', default=False)
 
 args = parser.parse_args()
+
+
+## directory for uploads
+STORE = 'client_uploads'
+if not os.path.exists(STORE):
+    os.makedirs(STORE)
 
 
 class FileServerThread(Thread):
@@ -33,11 +37,19 @@ class FileServerThread(Thread):
             message = self.fsock.receivemsg()
             if not message: return
 
-            client_file_model = pickle.loads(message)
+            cf_model = pickle.loads(message)
 
+            ## wraps the file writes with a lock
             with self._lock:
-                with open(os.path.join(FILE_STORAGE_DIR, client_file_model.file_name), 'ab') as f:
-                    f.write(client_file_model.contents)
+
+                ## set the mode based on whether the client wants to appent or overwrite
+                if cf_model.append:
+                    file_mode = 'at'
+                else:
+                    file_mode = 'wt'
+
+                with open(os.path.join(STORE, cf_model.file_name), file_mode) as f:
+                    f.write(cf_model.contents)
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as lsock:
